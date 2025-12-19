@@ -1,37 +1,79 @@
 @import 'tailwindcss';
 
 :root {
-  --electric-blue: #0066cc;
-  --electric-blue-dark: #0051d5;
-  --electric-blue-light: #66b3ff;
-  --success-green: #34c759;
-  --background: #ffffff;
-  --foreground: #000000;
-  --card-background: #ffffff;
-  --border: #e5e7eb;
-  --muted: #6b7280;
-  --muted-foreground: #6b7280;
+  /* Duolingo-inspired colors */
+  --duo-green: #58cc02;
+  --duo-green-dark: #46a302;
+  --duo-green-light: #7ed321;
+  --duo-blue: #1cb0f6;
+  --duo-blue-dark: #1899d6;
+  --duo-blue-light: #40c4ff;
+  --duo-red: #ff4b4b;
+  --duo-red-dark: #ea2b2b;
+  --duo-purple: #ce82ff;
+  --duo-purple-dark: #a855f7;
+  --duo-yellow: #ffc800;
+  --duo-orange: #ff9600;
+
+  /* UI colors */
+  --background: #f7f7f7;
+  --background-card: #ffffff;
+  --foreground: #3c3c3c;
+  --foreground-muted: #afafaf;
+  --border: #e5e5e5;
+  --border-strong: #d0d0d0;
+
+  /* Legacy (for compatibility) */
+  --electric-blue: var(--duo-blue);
+  --electric-blue-dark: var(--duo-blue-dark);
+  --electric-blue-light: var(--duo-blue-light);
+  --success-green: var(--duo-green);
+  --card-background: var(--background-card);
+  --muted: var(--foreground-muted);
+  --muted-foreground: var(--foreground-muted);
 }
 
 @theme inline {
+  /* Duolingo colors */
+  --color-duo-green: var(--duo-green);
+  --color-duo-green-dark: var(--duo-green-dark);
+  --color-duo-green-light: var(--duo-green-light);
+  --color-duo-blue: var(--duo-blue);
+  --color-duo-blue-dark: var(--duo-blue-dark);
+  --color-duo-blue-light: var(--duo-blue-light);
+  --color-duo-red: var(--duo-red);
+  --color-duo-red-dark: var(--duo-red-dark);
+  --color-duo-purple: var(--duo-purple);
+  --color-duo-purple-dark: var(--duo-purple-dark);
+  --color-duo-yellow: var(--duo-yellow);
+  --color-duo-orange: var(--duo-orange);
+
+  /* UI colors */
+  --color-background: var(--background);
+  --color-background-card: var(--background-card);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  /* Legacy */
   --color-electric-blue: var(--electric-blue);
   --color-electric-blue-dark: var(--electric-blue-dark);
   --color-electric-blue-light: var(--electric-blue-light);
   --color-success-green: var(--success-green);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --color-card-background: var(--card-background);
-  --color-border: var(--border);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --font-sans: var(--font-dm-sans);
+
+  /* Fonts */
+  --font-sans: var(--font-nunito);
   --font-family-sans:
-    var(--font-dm-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue',
+    var(--font-nunito), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue',
     Roboto, sans-serif;
 }
 
 body {
-  background: #ffffff;
+  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-family-sans);
   line-height: 1.6;
@@ -39,7 +81,7 @@ body {
 
 * {
   font-family:
-    var(--font-dm-sans),
+    var(--font-nunito),
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
@@ -67,12 +109,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--electric-blue);
+  background: var(--duo-blue);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--electric-blue-dark);
+  background: var(--duo-blue-dark);
 }
 
 @media (max-width: 768px) {
@@ -109,6 +151,7 @@ body {
   }
 }
 
+/* Animations */
 @keyframes slide-up {
   from {
     transform: translateY(100%);
@@ -120,6 +163,149 @@ body {
   }
 }
 
+@keyframes slide-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-green {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(88, 204, 2, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(88, 204, 2, 0);
+  }
+}
+
+@keyframes set-complete {
+  0% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.3);
+  }
+  50% {
+    transform: scale(0.9);
+  }
+  75% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes confetti-pop {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2) rotate(180deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
+    opacity: 1;
+  }
+}
+
+@keyframes number-pop {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
+}
+
+.animate-slide-down {
+  animation: slide-down 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.3s ease-out;
+}
+
+.animate-pulse-green {
+  animation: pulse-green 2s infinite;
+}
+
+.animate-set-complete {
+  animation: set-complete 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.animate-number-pop {
+  animation: number-pop 0.3s ease-out;
+}
+
+/* Card styles */
+.card {
+  background: var(--background-card);
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.card-elevated {
+  background: var(--background-card);
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  border-bottom-width: 4px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Input styles */
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }

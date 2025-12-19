@@ -1,31 +1,13 @@
 import type { Metadata, Viewport } from 'next'
-import localFont from 'next/font/local'
+import { Nunito } from 'next/font/google'
 import './globals.css'
 import PWAInstaller from '@/components/PWAInstaller'
+import Providers from '@/components/Providers'
 
-const dmSans = localFont({
-  variable: '--font-dm-sans',
+const nunito = Nunito({
+  subsets: ['latin'],
+  variable: '--font-nunito',
   display: 'swap',
-  src: [
-    { path: '../assets/fonts/dm-sans/dm-sans-latin-100-normal.woff2', weight: '100', style: 'normal' },
-    { path: '../assets/fonts/dm-sans/dm-sans-latin-100-italic.woff2', weight: '100', style: 'italic' },
-    { path: '../assets/fonts/dm-sans/dm-sans-latin-200-normal.woff2', weight: '200', style: 'normal' },
-    { path: '../assets/fonts/dm-sans/dm-sans-latin-200-italic.woff2', weight: '200', style: 'italic' },
-    { path: '../assets/fonts/dm-sans/dm-sans-latin-300-normal.woff2', weight: '300', style: 'normal' },
-    { path: '../assets/fonts/dm-sans/dm-sans-latin-300-italic.woff2', weight: '300', style: 'italic' },
-    { path: '../assets/fonts/dm-sans/dm-sans-latin-400-normal.woff2', weight: '400', style: 'normal' },
-    { path: '../assets/fonts/dm-sans/dm-sans-latin-400-italic.woff2', weight: '400', style: 'italic' },
-    { path: '../assets/fonts/dm-sans/dm-sans-latin-500-normal.woff2', weight: '500', style: 'normal' },
-    { path: '../assets/fonts/dm-sans/dm-sans-latin-500-italic.woff2', weight: '500', style: 'italic' },
-    { path: '../assets/fonts/dm-sans/dm-sans-latin-600-normal.woff2', weight: '600', style: 'normal' },
-    { path: '../assets/fonts/dm-sans/dm-sans-latin-600-italic.woff2', weight: '600', style: 'italic' },
-    { path: '../assets/fonts/dm-sans/dm-sans-latin-700-normal.woff2', weight: '700', style: 'normal' },
-    { path: '../assets/fonts/dm-sans/dm-sans-latin-700-italic.woff2', weight: '700', style: 'italic' },
-    { path: '../assets/fonts/dm-sans/dm-sans-latin-800-normal.woff2', weight: '800', style: 'normal' },
-    { path: '../assets/fonts/dm-sans/dm-sans-latin-800-italic.woff2', weight: '800', style: 'italic' },
-    { path: '../assets/fonts/dm-sans/dm-sans-latin-900-normal.woff2', weight: '900', style: 'normal' },
-    { path: '../assets/fonts/dm-sans/dm-sans-latin-900-italic.woff2', weight: '900', style: 'italic' },
-  ],
 })
 
 export const metadata: Metadata = {
@@ -64,9 +46,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <meta name="theme-color" content="#ffffff" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </head>
-      <body className={`${dmSans.variable} antialiased`} suppressHydrationWarning>
-        <PWAInstaller />
-        {children}
+      <body className={`${nunito.variable} antialiased`} suppressHydrationWarning>
+        <Providers>
+          <PWAInstaller />
+          {children}
+        </Providers>
       </body>
     </html>
   )
