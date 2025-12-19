@@ -1,0 +1,125 @@
+@import 'tailwindcss';
+
+:root {
+  --electric-blue: #0066cc;
+  --electric-blue-dark: #0051d5;
+  --electric-blue-light: #66b3ff;
+  --success-green: #34c759;
+  --background: #ffffff;
+  --foreground: #000000;
+  --card-background: #ffffff;
+  --border: #e5e7eb;
+  --muted: #6b7280;
+  --muted-foreground: #6b7280;
+}
+
+@theme inline {
+  --color-electric-blue: var(--electric-blue);
+  --color-electric-blue-dark: var(--electric-blue-dark);
+  --color-electric-blue-light: var(--electric-blue-light);
+  --color-success-green: var(--success-green);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card-background: var(--card-background);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --font-sans: var(--font-dm-sans);
+  --font-family-sans:
+    var(--font-dm-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue',
+    Roboto, sans-serif;
+}
+
+body {
+  background: #ffffff;
+  color: var(--foreground);
+  font-family: var(--font-family-sans);
+  line-height: 1.6;
+}
+
+* {
+  font-family:
+    var(--font-dm-sans),
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'Helvetica Neue',
+    Roboto,
+    sans-serif !important;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--electric-blue);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--electric-blue-dark);
+}
+
+@media (max-width: 768px) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  a[role='button'],
+  [role='button'] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+  }
+
+  body {
+    font-size: 16px;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  .mobile-safe-area {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  * {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
