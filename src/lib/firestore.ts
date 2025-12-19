@@ -8,13 +8,11 @@ import {
   orderBy,
   limit,
   serverTimestamp,
-  Timestamp
 } from 'firebase/firestore'
 import { db } from './firebase'
 import type { WorkoutHistory, UserSettings, ExerciseWeights, DayNumber } from '@/types/workout'
 
 // Collection references
-const getUserRef = (userId: string) => doc(db, 'users', userId)
 const getWorkoutsRef = (userId: string) => collection(db, 'users', userId, 'workouts')
 const getSettingsRef = (userId: string) => doc(db, 'users', userId, 'settings', 'preferences')
 const getWeightsRef = (userId: string) => doc(db, 'users', userId, 'settings', 'weights')
@@ -213,23 +211,23 @@ export async function calculateWorkoutStats(userId: string): Promise<WorkoutStat
         }
       }
 
+      const exerciseStat = stats.exerciseStats[exercise.name]
+      if (!exerciseStat) continue
+
       for (const set of exercise.sets) {
         if (set.completed) {
           stats.totalSets++
           stats.totalReps += set.actualReps
-          stats.exerciseStats[exercise.name].totalSets++
-          stats.exerciseStats[exercise.name].totalReps += set.actualReps
-          stats.exerciseStats[exercise.name].maxWeight = Math.max(
-            stats.exerciseStats[exercise.name].maxWeight,
-            set.weight
-          )
+          exerciseStat.totalSets++
+          exerciseStat.totalReps += set.actualReps
+          exerciseStat.maxWeight = Math.max(exerciseStat.maxWeight, set.weight)
         }
       }
 
       // Get last weight from most recent workout
       const lastSet = exercise.sets.find(s => s.completed)
       if (lastSet) {
-        stats.exerciseStats[exercise.name].lastWeight = lastSet.weight
+        exerciseStat.lastWeight = lastSet.weight
       }
     }
   }

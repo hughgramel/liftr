@@ -395,7 +395,11 @@ async function createDashboardSheet(spreadsheetId: string): Promise<number> {
       })
     }
   )
-  return response.replies[0].addSheet.properties.sheetId
+  const reply = response.replies[0]
+  if (!reply?.addSheet?.properties?.sheetId) {
+    throw new Error('Failed to create Dashboard sheet')
+  }
+  return reply.addSheet.properties.sheetId
 }
 
 // Sheet for exercise-specific data
@@ -422,7 +426,11 @@ async function createExerciseStatsSheet(spreadsheetId: string): Promise<number> 
       })
     }
   )
-  return response.replies[0].addSheet.properties.sheetId
+  const reply = response.replies[0]
+  if (!reply?.addSheet?.properties?.sheetId) {
+    throw new Error('Failed to create Exercise Stats sheet')
+  }
+  return reply.addSheet.properties.sheetId
 }
 
 // Get unique exercises from the Exercises sheet
@@ -430,7 +438,7 @@ async function getUniqueExercises(spreadsheetId: string): Promise<string[]> {
   const response = await sheetsRequest<{ values?: string[][] }>(
     `${SHEETS_API_BASE}/${spreadsheetId}/values/${EXERCISES_SHEET}!C2:C10000`
   )
-  const exercises = response.values?.map(row => row[0]).filter(Boolean) || []
+  const exercises = response.values?.map(row => row[0]).filter((val): val is string => Boolean(val)) || []
   return [...new Set(exercises)]
 }
 
@@ -531,8 +539,8 @@ export async function generateCharts(): Promise<void> {
     const [workoutId, , exerciseName, , , repsStr, weightStr] = row
     if (!workoutId || !exerciseName) return
 
-    const reps = parseInt(repsStr) || 0
-    const weight = parseFloat(weightStr) || 0
+    const reps = parseInt(repsStr || '0') || 0
+    const weight = parseFloat(weightStr || '0') || 0
     const volume = reps * weight
 
     const stats = workoutStats.get(workoutId)
@@ -585,10 +593,13 @@ export async function generateCharts(): Promise<void> {
   const totalSets = exerciseData.length
 
   // Count workouts by day
-  const dayCount = [0, 0, 0, 0]
+  const dayCount: [number, number, number, number] = [0, 0, 0, 0]
   workoutRows.forEach(row => {
-    const dayNum = parseInt(row[2]) || 0
-    if (dayNum >= 1 && dayNum <= 4) dayCount[dayNum - 1]++
+    const dayNum = parseInt(row[2] || '0') || 0
+    if (dayNum >= 1 && dayNum <= 4) {
+      const idx = (dayNum - 1) as 0 | 1 | 2 | 3
+      dayCount[idx]++
+    }
   })
 
   await sheetsRequest(

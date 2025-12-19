@@ -65,23 +65,23 @@ function calculateLocalStats(): WorkoutStats {
         }
       }
 
+      const exerciseStat = stats.exerciseStats[exercise.name]
+      if (!exerciseStat) continue
+
       for (const set of exercise.sets) {
         if (set.completed) {
           stats.totalSets++
           stats.totalReps += set.actualReps
-          stats.exerciseStats[exercise.name].totalSets++
-          stats.exerciseStats[exercise.name].totalReps += set.actualReps
-          stats.exerciseStats[exercise.name].maxWeight = Math.max(
-            stats.exerciseStats[exercise.name].maxWeight,
-            set.weight
-          )
+          exerciseStat.totalSets++
+          exerciseStat.totalReps += set.actualReps
+          exerciseStat.maxWeight = Math.max(exerciseStat.maxWeight, set.weight)
         }
       }
 
       // Get last weight from most recent workout
       const lastSet = exercise.sets.find(s => s.completed)
       if (lastSet) {
-        stats.exerciseStats[exercise.name].lastWeight = lastSet.weight
+        exerciseStat.lastWeight = lastSet.weight
       }
     }
   }
@@ -235,7 +235,7 @@ function MonthlyChart({ workoutsByMonth }: { workoutsByMonth: Record<string, num
 }
 
 export default function AnalyticsPage() {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const [stats, setStats] = useState<WorkoutStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 

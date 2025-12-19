@@ -14,7 +14,8 @@ const firebaseConfig = {
 }
 
 // Initialize Firebase only once
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
+const existingApp = getApps()[0]
+const app = existingApp ?? initializeApp(firebaseConfig)
 
 // Auth
 export const auth = getAuth(app)
