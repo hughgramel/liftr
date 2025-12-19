@@ -363,6 +363,75 @@ export async function verifySpreadsheetAccess(spreadsheetId: string): Promise<bo
   }
 }
 
+// Reset spreadsheet - creates a new one and populates with provided workout history
+export async function resetAndPopulateSpreadsheet(workoutHistory: WorkoutHistory[]): Promise<string> {
+  // Create a fresh spreadsheet
+  const newSpreadsheetId = await createLiftRSpreadsheet()
+
+  // If no workout history, just return the new empty spreadsheet
+  if (!workoutHistory || workoutHistory.length === 0) {
+    return newSpreadsheetId
+  }
+
+  // Populate with all workout data
+  const workoutRows: (string | number)[][] = []
+  const exerciseRows: (string | number | boolean)[][] = []
+
+  workoutHistory.forEach(workout => {
+    const totalSets = workout.exercises.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed).length, 0)
+
+    workoutRows.push([
+      workout.id,
+      workout.date,
+      workout.dayNumber,
+      workout.dayName,
+      workout.duration,
+      totalSets,
+    ])
+
+    workout.exercises.forEach(exercise => {
+      exercise.sets.forEach((set, setIndex) => {
+        if (set.completed) {
+          exerciseRows.push([
+            workout.id,
+            workout.date,
+            exercise.name,
+            exercise.tier,
+            setIndex + 1,
+            set.actualReps,
+            set.weight,
+            true,
+          ])
+        }
+      })
+    })
+  })
+
+  // Batch append workouts
+  if (workoutRows.length > 0) {
+    await sheetsRequest(
+      `${SHEETS_API_BASE}/${newSpreadsheetId}/values/${WORKOUTS_SHEET}!A:F:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ values: workoutRows }),
+      }
+    )
+  }
+
+  // Batch append exercises
+  if (exerciseRows.length > 0) {
+    await sheetsRequest(
+      `${SHEETS_API_BASE}/${newSpreadsheetId}/values/${EXERCISES_SHEET}!A:H:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ values: exerciseRows }),
+      }
+    )
+  }
+
+  return newSpreadsheetId
+}
+
 // Sheet name for charts/dashboard
 const DASHBOARD_SHEET = 'Dashboard'
 

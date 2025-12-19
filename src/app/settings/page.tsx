@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, LogOut, Check, Loader2, Mail, Eye, EyeOff, FileSpreadsheet, Link2, BarChart3, RefreshCw } from 'lucide-react'
+import { ArrowLeft, LogOut, Check, Loader2, Mail, Eye, EyeOff, FileSpreadsheet, Link2, BarChart3, RefreshCw, RotateCcw } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { syncFirestoreToLocal } from '@/lib/firestore'
@@ -15,7 +15,8 @@ import {
   clearStoredAuth,
   type GoogleUser
 } from '@/lib/google-auth'
-import { getOrCreateSpreadsheet, generateCharts, verifySpreadsheetAccess } from '@/lib/google-sheets'
+import { getOrCreateSpreadsheet, generateCharts, verifySpreadsheetAccess, resetAndPopulateSpreadsheet } from '@/lib/google-sheets'
+import { getWorkoutHistory } from '@/lib/storage'
 import Button from '@/components/ui/Button'
 
 type AuthMode = 'signin' | 'signup' | 'reset'
@@ -55,6 +56,10 @@ export default function SettingsPage() {
   // Sync & Verify state
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<{ success: boolean; message: string } | null>(null)
+
+  // Reset Spreadsheet state
+  const [isResetting, setIsResetting] = useState(false)
+  const [resetResult, setResetResult] = useState<{ success: boolean; message: string } | null>(null)
 
   // Load Google Sheets connection state
   useEffect(() => {
@@ -171,90 +176,88 @@ export default function SettingsPage() {
     setSyncResult(null)
 
     try {
-      const issues: string[] = []
       const fixes: string[] = []
 
       const localSheetId = getSpreadsheetId()
       const firebaseSheetId = userProfile?.spreadsheetId
 
-      // Check 1: Is user logged in?
-      if (!user || !userProfile) {
-        setSyncResult({ success: false, message: 'Please sign in to your account first.' })
-        return
-      }
-
-      // Check 2: Is Google Sheets connected?
+      // Check 1: Is Google Sheets connected?
       const token = getStoredToken()
       if (!token) {
         setSyncResult({ success: false, message: 'Please connect Google Sheets first.' })
         return
       }
 
-      // Check 3: Do we have any spreadsheet ID?
+      // Check 2: Do we have any spreadsheet ID?
       if (!localSheetId && !firebaseSheetId) {
         setSyncResult({ success: false, message: 'No spreadsheet found. Please connect Google Sheets to create one.' })
         return
       }
 
-      // Check 4: Verify local spreadsheet is accessible
+      // Check 3: Verify local spreadsheet is accessible
       let localAccessible = false
       if (localSheetId) {
         localAccessible = await verifySpreadsheetAccess(localSheetId)
         if (!localAccessible) {
-          issues.push('Local spreadsheet ID is not accessible')
+          fixes.push('Local spreadsheet not accessible')
         }
       }
 
-      // Check 5: Verify Firebase spreadsheet is accessible
+      // Check 4: Verify Firebase spreadsheet is accessible (if user is logged in)
       let firebaseAccessible = false
       if (firebaseSheetId) {
         firebaseAccessible = await verifySpreadsheetAccess(firebaseSheetId)
         if (!firebaseAccessible) {
-          issues.push('Firebase spreadsheet ID is not accessible')
+          fixes.push('Firebase spreadsheet not accessible')
         }
       }
 
-      // Check 6: Are they in sync?
-      if (localSheetId && firebaseSheetId && localSheetId !== firebaseSheetId) {
-        issues.push('Local and Firebase spreadsheet IDs do not match')
+      // Check 5: Are they in sync? (only if user is logged in to Firebase)
+      if (user && userProfile) {
+        if (localSheetId && firebaseSheetId && localSheetId !== firebaseSheetId) {
+          // Prefer Firebase ID if accessible (it's the source of truth for cross-device)
+          if (firebaseAccessible) {
+            storeSpreadsheetId(firebaseSheetId)
+            setSpreadsheetIdState(firebaseSheetId)
+            fixes.push('Updated local storage to match Firebase')
+          } else if (localAccessible) {
+            await updateSpreadsheetId(localSheetId)
+            fixes.push('Updated Firebase to match local storage')
+          }
+        }
 
-        // Prefer Firebase ID if accessible (it's the source of truth for cross-device)
-        if (firebaseAccessible) {
+        // Local exists but Firebase doesn't
+        if (localSheetId && localAccessible && !firebaseSheetId) {
+          await updateSpreadsheetId(localSheetId)
+          fixes.push('Saved spreadsheet ID to Firebase')
+        }
+
+        // Firebase exists but local doesn't
+        if (firebaseSheetId && firebaseAccessible && !localSheetId) {
           storeSpreadsheetId(firebaseSheetId)
           setSpreadsheetIdState(firebaseSheetId)
-          fixes.push('Updated local storage to match Firebase')
-        } else if (localAccessible) {
-          await updateSpreadsheetId(localSheetId)
-          fixes.push('Updated Firebase to match local storage')
+          fixes.push('Restored spreadsheet ID from Firebase')
+        }
+
+        // Sync workout data from Firestore to local
+        await syncFirestoreToLocal(user.uid)
+        fixes.push('Synced workout data from cloud')
+      }
+
+      // Verify current spreadsheet is accessible
+      const currentSheetId = localSheetId || firebaseSheetId
+      if (currentSheetId) {
+        const isAccessible = await verifySpreadsheetAccess(currentSheetId)
+        if (isAccessible) {
+          fixes.push('Spreadsheet verified accessible')
         }
       }
 
-      // Check 7: Local exists but Firebase doesn't
-      if (localSheetId && localAccessible && !firebaseSheetId) {
-        await updateSpreadsheetId(localSheetId)
-        fixes.push('Saved spreadsheet ID to Firebase')
-      }
-
-      // Check 8: Firebase exists but local doesn't
-      if (firebaseSheetId && firebaseAccessible && !localSheetId) {
-        storeSpreadsheetId(firebaseSheetId)
-        setSpreadsheetIdState(firebaseSheetId)
-        fixes.push('Restored spreadsheet ID from Firebase')
-      }
-
-      // Sync workout data from Firestore to local
-      await syncFirestoreToLocal(user.uid)
-      fixes.push('Synced workout data from cloud')
-
       // Build result message
-      if (issues.length === 0 && fixes.length === 1) {
-        setSyncResult({ success: true, message: 'Everything is in sync!' })
-      } else {
-        const message = fixes.length > 0
-          ? `Fixed: ${fixes.join(', ')}`
-          : 'Everything is in sync!'
-        setSyncResult({ success: true, message })
-      }
+      setSyncResult({
+        success: true,
+        message: fixes.length > 0 ? fixes.join('. ') : 'Everything is in sync!'
+      })
 
     } catch (err) {
       setSyncResult({
@@ -263,6 +266,51 @@ export default function SettingsPage() {
       })
     } finally {
       setIsSyncing(false)
+    }
+  }
+
+  // Reset Spreadsheet handler - creates a new spreadsheet and populates with local data
+  const handleResetSpreadsheet = async () => {
+    if (!confirm('This will create a new spreadsheet and populate it with all your local workout data. The old spreadsheet will remain in your Google Drive but will no longer be linked. Continue?')) {
+      return
+    }
+
+    setIsResetting(true)
+    setResetResult(null)
+
+    try {
+      const token = getStoredToken()
+      if (!token) {
+        setResetResult({ success: false, message: 'Please connect Google Sheets first.' })
+        return
+      }
+
+      // Get all local workout history
+      const workoutHistory = getWorkoutHistory()
+
+      // Create new spreadsheet and populate with data
+      const newSpreadsheetId = await resetAndPopulateSpreadsheet(workoutHistory)
+
+      // Update local state
+      setSpreadsheetIdState(newSpreadsheetId)
+
+      // Update Firebase if logged in
+      if (user) {
+        await updateSpreadsheetId(newSpreadsheetId)
+      }
+
+      setResetResult({
+        success: true,
+        message: `New spreadsheet created with ${workoutHistory.length} workout(s)!`
+      })
+
+    } catch (err) {
+      setResetResult({
+        success: false,
+        message: err instanceof Error ? err.message : 'Reset failed. Please try again.'
+      })
+    } finally {
+      setIsResetting(false)
     }
   }
 
@@ -527,6 +575,36 @@ export default function SettingsPage() {
               {chartsSuccess && (
                 <div className="p-3 bg-duo-green/10 text-duo-green rounded-xl text-sm">
                   Charts generated! Opening spreadsheet...
+                </div>
+              )}
+
+              {/* Reset Spreadsheet Button */}
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleResetSpreadsheet}
+                disabled={isResetting}
+              >
+                {isResetting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Creating New Spreadsheet...
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw className="w-5 h-5 mr-2" />
+                    Reset Spreadsheet
+                  </>
+                )}
+              </Button>
+
+              {resetResult && (
+                <div className={`p-3 rounded-xl text-sm ${
+                  resetResult.success
+                    ? 'bg-duo-green/10 text-duo-green'
+                    : 'bg-duo-red/10 text-duo-red'
+                }`}>
+                  {resetResult.message}
                 </div>
               )}
 
