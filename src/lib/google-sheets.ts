@@ -115,17 +115,32 @@ async function initializeSheetHeaders(spreadsheetId: string): Promise<void> {
 }
 
 // Get or create spreadsheet
-export async function getOrCreateSpreadsheet(): Promise<string> {
-  const existingId = getSpreadsheetId()
+// If firebaseSpreadsheetId is provided (from user's Firebase profile), use it if accessible
+export async function getOrCreateSpreadsheet(firebaseSpreadsheetId?: string | null): Promise<string> {
+  // First, check localStorage for an existing spreadsheet ID
+  const localId = getSpreadsheetId()
 
-  if (existingId) {
-    // Verify it still exists and is accessible
+  // Try localStorage ID first
+  if (localId) {
     try {
-      await sheetsRequest(`${SHEETS_API_BASE}/${existingId}`)
-      return existingId
+      await sheetsRequest(`${SHEETS_API_BASE}/${localId}`)
+      return localId
     } catch {
-      // Spreadsheet not accessible, create new one
-      console.log('Existing spreadsheet not accessible, creating new one')
+      console.log('Local spreadsheet not accessible')
+    }
+  }
+
+  // If no local ID or it's not accessible, try the Firebase spreadsheet ID
+  // This handles the case where user logs in on a new device
+  if (firebaseSpreadsheetId) {
+    try {
+      await sheetsRequest(`${SHEETS_API_BASE}/${firebaseSpreadsheetId}`)
+      // Store it locally so we don't need to check Firebase again
+      storeSpreadsheetId(firebaseSpreadsheetId)
+      console.log('Using existing spreadsheet from Firebase profile')
+      return firebaseSpreadsheetId
+    } catch {
+      console.log('Firebase spreadsheet not accessible, creating new one')
     }
   }
 
@@ -336,6 +351,16 @@ export async function getExerciseWeightsFromSheets(): Promise<Record<string, num
 // Check if connected to Google Sheets
 export function isConnectedToSheets(): boolean {
   return !!getStoredToken() && !!getSpreadsheetId()
+}
+
+// Verify a spreadsheet ID is accessible
+export async function verifySpreadsheetAccess(spreadsheetId: string): Promise<boolean> {
+  try {
+    await sheetsRequest(`${SHEETS_API_BASE}/${spreadsheetId}`)
+    return true
+  } catch {
+    return false
+  }
 }
 
 // Sheet name for charts/dashboard
